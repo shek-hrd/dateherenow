@@ -1,17 +1,33 @@
+/**
+ * Network Dating Game - Frontend Application Logic
+ *
+ * This script handles:
+ * - User profile management.
+ * - Geolocation for proximity calculation.
+ * - Connection to the signaling server via WebSockets.
+ * - WebRTC peer-to-peer connection management.
+ * - Data channel communication for profiles, likes, and matches.
+ * - Dynamic UI updates.
+ */
 document.addEventListener('DOMContentLoaded', () => {
-    const SIGNALING_SERVER_URL = 'http://localhost:3000';
+    // IMPORTANT: Replace this with the URL of your deployed signaling server from Render.com
+    const SIGNALING_SERVER_URL = 'https://your-signaling-server-name.onrender.com';
 
     // --- DOM Elements ---
-    const myNameInput = document.getElementById('my-name');
-    const myPreferencesInput = document.getElementById('my-preferences');
-    const myAboutInput = document.getElementById('my-about');
-    const myPhoneInput = document.getElementById('my-phone');
-    const myPictureInput = document.getElementById('my-picture-input');
-    const myPicturePreview = document.getElementById('my-picture-preview');
+    const myProfileForm = {
+        name: document.getElementById('my-name'),
+        preferences: document.getElementById('my-preferences'),
+        about: document.getElementById('my-about'),
+        phone: document.getElementById('my-phone'),
+        pictureInput: document.getElementById('my-picture-input'),
+        picturePreview: document.getElementById('my-picture-preview'),
+    };
     const updateProfileBtn = document.getElementById('update-profile-btn');
     const userList = document.getElementById('user-list');
     const locationStatus = document.getElementById('location-status');
     const userCardTemplate = document.getElementById('user-card-template');
+    const serverStatusLight = document.getElementById('server-status');
+    const matchNotification = document.getElementById('match-notification');
 
     // --- State ---
     let myProfile = {
@@ -19,45 +35,60 @@ document.addEventListener('DOMContentLoaded', () => {
         preferences: '',
         about: '',
         phone: '',
-        picture: myPicturePreview.src,
+        picture: myProfileForm.picturePreview.src,
         location: null,
     };
     let myId = null;
-    const peers = new Map(); // Stores peer connections { peerId: { pc, dc, userProfile } }
+    // Stores peer connections: { peerId: { pc, dc, userProfile, likedByMe, likesMe } }
+    const peers = new Map();
 
-    // --- Signaling (WebSocket) ---
+    // =================================================================================
+    // --- 1. SIGNALING & INITIALIZATION ---
+    // =================================================================================
+
     const socket = io(SIGNALING_SERVER_URL);
 
     socket.on('connect', () => {
         myId = socket.id;
         console.log('Connected to signaling server with ID:', myId);
+        serverStatusLight.classList.add('connected');
+        serverStatusLight.title = 'Connected to Signaling Server';
+        // Announce our presence to everyone who is already there.
+        socket.emit('new-user-announce', { userId: myId });
     });
 
-    socket.on('users-present', (userIds) => {
-        console.log('Users already present:', userIds);
-        userIds.forEach(userId => createPeerConnection(userId, true));
+    socket.on('disconnect', () => {
+        console.warn('Disconnected from signaling server.');
+        serverStatusLight.classList.remove('connected');
+        serverStatusLight.title = 'Disconnected from Signaling Server';
     });
 
-    socket.on('user-joined', (userId) => {
-        console.log('New user joined:', userId);
-        createPeerConnection(userId, false);
+    // Another user has joined, let's initiate a connection to them.
+    socket.on('user-joined', ({ userId }) => {
+        console.log('New user joined:', userId, 'I will initiate connection.');
+        // The new user initiates the connection, we just wait for their offer.
     });
 
-    socket.on('user-left', (userId) => {
-        console.log('User left:', userId);
+    // A user has announced their presence (either they just joined, or we just joined).
+    // We will initiate the connection to them.
+    socket.on('user-announce', ({ userId }) => {
+        console.log('Discovered user:', userId, 'Initiating connection.');
+        createPeerConnection(userId, true); // true = I am the initiator
+    });
+
+    socket.on('user-left', ({ userId }) => {
+        console.log('User left:', userId, 'Cleaning up connection.');
         if (peers.has(userId)) {
             peers.get(userId).pc.close();
             peers.delete(userId);
             document.getElementById(`user-${userId}`)?.remove();
         }
     });
-
     socket.on('signal', async ({ from, signal }) => {
-        // FIX: If a signal arrives from a peer we don't know, it's an offer to connect.
-        // We must create a peer connection for them instead of ignoring it.
         if (!peers.has(from)) {
-            console.log(`Received offer from new peer ${from}. Creating connection.`);
-            createPeerConnection(from, false); // false = we are the receiver
+            // If we receive a signal from an unknown peer, it's an offer to connect.
+            console.log(`Received signal from new peer ${from}. Creating connection.`);
+            createPeerConnection(from, false); // false = I am not the initiator
         }
         const { pc } = peers.get(from);
         try {
@@ -76,15 +107,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- WebRTC ---
+    // =================================================================================
+    // --- 2. WEBRTC PEER-TO-PEER LOGIC ---
+    // =================================================================================
+
+    /**
+     * Creates and configures a new RTCPeerConnection to another user.
+     * @param {string} peerId The socket ID of the other user.
+     * @param {boolean} isInitiator True if we are starting the connection.
+     */
     const createPeerConnection = (peerId, isInitiator) => {
-        if (peers.has(peerId)) return;
+        if (peers.has(peerId) || peerId === myId) return;
 
         const pc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] // Public STUN server
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] // Google's public STUN server
         });
 
-        peers.set(peerId, { pc, userProfile: {} });
+        peers.set(peerId, { pc, userProfile: {}, likedByMe: false, likesMe: false });
 
         pc.onicecandidate = (event) => {
             if (event.candidate) {
@@ -99,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         pc.oniceconnectionstatechange = () => {
+            updateConnectionStateIndicator(peerId, pc.iceConnectionState);
             updateConnectionStats(peerId);
         };
 
@@ -131,10 +171,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Profile & UI ---
     const updateMyProfile = () => {
-        myProfile.name = myProfileForm.name.value;
-        myProfile.preferences = myProfileForm.preferences.value;
-        myProfile.about = myProfileForm.about.value;
-        myProfile.phone = myProfileForm.phone.value;
+        myProfile.name = myNameInput.value;
+        myProfile.preferences = myPreferencesInput.value;
+        myProfile.about = myAboutInput.value;
+        myProfile.phone = myPhoneInput.value;
         console.log('My profile updated:', myProfile);
     };
 
@@ -152,13 +192,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateProfileBtn.addEventListener('click', broadcastProfile);
 
-    myProfileForm.pictureInput.addEventListener('change', (event) => {
+    myPictureInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 myProfile.picture = e.target.result;
-                myProfileForm.picturePreview.src = e.target.result;
+                myPicturePreview.src = e.target.result;
                 broadcastProfile();
             };
             reader.readAsDataURL(file);
@@ -177,9 +217,17 @@ document.addEventListener('DOMContentLoaded', () => {
             details.classList.toggle('visible');
             e.target.textContent = details.classList.contains('visible') ? 'Show Less' : 'Show More';
         });
+
+        userCard.querySelector('.like-btn').addEventListener('click', () => handleLike(peerId));
     };
 
+    /**
+     * Updates the content of a user's card with their profile information.
+     * @param {string} peerId The ID of the user whose card to update.
+     * @param {object} profile The user's profile data.
+     */
     const updateUserCard = (peerId, profile) => {
+        // Ensure the card exists before trying to update it.
         createUserCard(peerId);
         const userCard = document.getElementById(`user-${peerId}`);
         if (!userCard) return;
@@ -197,7 +245,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Geolocation & Stats ---
+    /**
+     * Handles the logic when the "Like" button is clicked.
+     * @param {string} peerId The ID of the user being liked.
+     */
+    function handleLike(peerId) {
+        const peerState = peers.get(peerId);
+        if (!peerState || peerState.likedByMe) return; // Don't do anything if already liked
+
+        console.log(`You liked ${peerId}`);
+        peerState.likedByMe = true;
+
+        // Update the button's appearance
+        const likeBtn = document.querySelector(`#user-${peerId} .like-btn`);
+        likeBtn.classList.add('liked-by-me');
+        likeBtn.textContent = '❤️ Liked';
+
+        // Send a 'like' message to the peer
+        sendMessage(peerId, { type: 'like' });
+
+        // Check if they already liked us to trigger a match
+        if (peerState.likesMe) {
+            console.log(`It's a mutual match with ${peerId}!`);
+            showMatch(peerId);
+        }
+    }
+
+    /**
+     * Triggers the UI animations and state changes for a match.
+     * @param {string} peerId The ID of the matched user.
+     */
+    function showMatch(peerId) {
+        // Show the global match notification banner
+        matchNotification.querySelector('p').textContent = `It's a match with ${peers.get(peerId).userProfile.name || 'Anonymous'}!`;
+        matchNotification.classList.add('show');
+        setTimeout(() => matchNotification.classList.remove('show'), 4000);
+
+        // Show the heart icon on the user's card
+        const userCard = document.getElementById(`user-${peerId}`);
+        if (userCard) {
+            const matchIcon = userCard.querySelector('.match-status');
+            matchIcon.textContent = '💞';
+            matchIcon.classList.add('visible');
+        }
+    }
+
+    // =================================================================================
+    // --- 4. GEOLOCATION & CONNECTION STATS ---
+    // =================================================================================
+
     const getGeolocation = () => {
         if ('geolocation' in navigator) {
             locationStatus.textContent = 'Getting location...';
@@ -220,6 +316,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    /**
+     * Calculates the distance in kilometers between two lat/lon points.
+     * @param {object} loc1 { lat, lon }
+     * @param {object} loc2 { lat, lon }
+     */
     const getDistance = (loc1, loc2) => {
         const R = 6371; // Radius of the Earth in km
         const dLat = (loc2.lat - loc1.lat) * (Math.PI / 180);
@@ -232,12 +333,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return R * c;
     };
 
+    /**
+     * Periodically checks the WebRTC connection stats to update latency and connection type.
+     * @param {string} peerId The ID of the peer whose stats to check.
+     */
     const updateConnectionStats = async (peerId) => {
         const peer = peers.get(peerId);
         if (!peer || !peer.pc) return;
         const userCard = document.getElementById(`user-${peerId}`);
         if (!userCard) return;
 
+        // getStats() is a built-in WebRTC function
         const stats = await peer.pc.getStats();
         let selectedCandidatePair;
         stats.forEach(report => {
@@ -254,14 +360,32 @@ document.addEventListener('DOMContentLoaded', () => {
             // Connection Type (Route Hint)
             const remoteCandidate = stats.get(selectedCandidatePair.remoteCandidateId);
             if (remoteCandidate) {
-                // 'host' = LAN, 'srflx' = NAT traversal, 'relay' = TURN server
-                const routeType = remoteCandidate.candidateType;
-                userCard.querySelector('.user-connection-type').textContent = `Direct (${routeType})`;
+                // 'host' = Direct LAN, 'srflx' = NAT Traversal, 'relay' = Relayed via TURN server
+                const routeType = {
+                    host: 'Direct (LAN)',
+                    srflx: 'Direct (NAT)',
+                    relay: 'Relayed'
+                }[remoteCandidate.candidateType] || 'Unknown';
+                userCard.querySelector('.user-connection-type').textContent = routeType;
             }
         }
     };
 
-    // --- Initial Load ---
+    /** Updates the colored dot on a user card to show their connection status. */
+    const updateConnectionStateIndicator = (peerId, state) => {
+        const dot = document.querySelector(`#user-${peerId} .connection-status-dot`);
+        if (!dot) return;
+        dot.classList.remove('connected', 'failed');
+        if (state === 'connected') {
+            dot.classList.add('connected');
+            dot.title = 'P2P Connected';
+        } else if (state === 'failed' || state === 'disconnected' || state === 'closed') {
+            dot.classList.add('failed');
+            dot.title = `P2P Disconnected (${state})`;
+        }
+    };
+
+    // --- Initial Load & Timers ---
     getGeolocation();
-    setInterval(() => peers.forEach((_, peerId) => updateConnectionStats(peerId)), 5000); // Update stats every 5s
+    setInterval(() => peers.forEach((_, peerId) => updateConnectionStats(peerId)), 3000); // Update stats every 3s
 });
