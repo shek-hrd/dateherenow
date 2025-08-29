@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // IMPORTANT: Replace this with the URL of your deployed signaling server from Render.com
     const SIGNALING_SERVER_URL = 'https://network-dating-signaler.onrender.com';
 
-    // --- DOM Elements ---
+    // FIX: Group form elements into an object to resolve the ReferenceError.
     const myProfileForm = {
         name: document.getElementById('my-name'),
         preferences: document.getElementById('my-preferences'),
@@ -85,10 +85,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     socket.on('signal', async ({ from, signal }) => {
+                // FIX: If a signal arrives from a peer we don't know, it's an offer to connect.
+        // We must create a peer connection for them instead of ignoring it.
         if (!peers.has(from)) {
-            // If we receive a signal from an unknown peer, it's an offer to connect.
-            console.log(`Received signal from new peer ${from}. Creating connection.`);
-            createPeerConnection(from, false); // false = I am not the initiator
+            console.log(`Received offer from new peer ${from}. Creating connection.`);
+            createPeerConnection(from, false); // false = we are the receiver
         }
         const { pc } = peers.get(from);
         try {
@@ -171,10 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Profile & UI ---
     const updateMyProfile = () => {
-        myProfile.name = myNameInput.value;
-        myProfile.preferences = myPreferencesInput.value;
-        myProfile.about = myAboutInput.value;
-        myProfile.phone = myPhoneInput.value;
+        myProfile.name = myProfileForm.name.value;
+        myProfile.preferences = myProfileForm.preferences.value;
+        myProfile.about = myProfileForm.about.value;
+        myProfile.phone = myProfileForm.phone.value;
         console.log('My profile updated:', myProfile);
     };
 
@@ -192,13 +193,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateProfileBtn.addEventListener('click', broadcastProfile);
 
-    myPictureInput.addEventListener('change', (event) => {
+    myProfileForm.pictureInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 myProfile.picture = e.target.result;
-                myPicturePreview.src = e.target.result;
+                myProfileForm.picturePreview.src = e.target.result;
                 broadcastProfile();
             };
             reader.readAsDataURL(file);
