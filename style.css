@@ -1,177 +1,232 @@
+/* --- General & Theming --- */
+:root {
+    --primary-color: #6a11cb;
+    --secondary-color: #2575fc;
+    --card-bg: #ffffff;
+    --body-bg: #f0f2f5;
+    --text-color: #333;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --success-color: #28a745;
+    --heart-color: #e2264d;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f0f2f5;
-  color: #333;
-  margin: 0;
-  padding: 1em;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--body-bg);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+    line-height: 1.6;
 }
 
-h1, h2 {
-  text-align: center;
-  color: #e91e63;
+.container {
+    max-width: 800px;
+    margin: 0 auto;
 }
 
-/* --- Login Container --- */
-#login-container {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 2em;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  text-align: center;
+footer {
+    text-align: center;
+    margin-top: 40px;
+    color: #aaa;
+    font-size: 0.9em;
 }
 
-#login-container input {
-  width: calc(100% - 22px);
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+/* --- Header & Status --- */
+.server-status-light {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #f44336; /* Red by default */
+    margin: 10px auto 0;
+    transition: background-color 0.5s ease;
+}
+.server-status-light.connected {
+    background-color: var(--success-color); /* Green when connected */
 }
 
-#login-container button {
-  width: 100%;
-  padding: 10px;
-  background-color: #e91e63;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1em;
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    color: var(--primary-color);
 }
 
-#login-container button:hover {
-  background-color: #c2185b;
+header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-/* --- Main App Layout --- */
-#main-container {
-  display: flex;
-  gap: 20px;
-  max-width: 1200px;
-  margin: auto;
+/* --- Card Styling --- */
+.card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
 }
 
-.left-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.my-profile h2, #nearby-users h2 {
+    margin-top: 0;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--body-bg);
+    padding-bottom: 10px;
 }
 
-.right-panel {
-  flex: 3;
+/* --- My Profile Form --- */
+.profile-grid {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 20px;
+    align-items: center;
 }
 
-/* --- User List --- */
-#user-list-container, #comms-log-container, #video-chat-container {
-  background: white;
-  padding: 1em;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.profile-picture { text-align: center; }
+.profile-picture img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--secondary-color);
+    margin-bottom: 10px;
 }
 
-#userList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  max-height: 200px;
-  overflow-y: auto;
+input, textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
 }
 
-#userList li {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-  cursor: pointer;
+button {
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s ease;
 }
 
-#userList li:hover, #userList li.active {
-  background-color: #fde4ec;
+button:hover {
+    transform: scale(1.05);
 }
 
-/* --- Comms Log --- */
-#comms-log {
-  background-color: #2d2d2d;
-  color: #9fef9f;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.8em;
-  height: 300px;
-  overflow-y: scroll;
-  padding: 10px;
-  border-radius: 4px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
+.profile-actions { margin-top: 15px; }
+#location-status { font-size: 0.9em; color: #666; margin-top: 10px; }
+
+/* --- User Card --- */
+.user-card .card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
-/* --- Video & Chat --- */
-#video-container {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  margin-bottom: 20px;
+.profile-picture-thumb {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
-.video-wrapper {
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background: #000;
+.user-name { margin: 0; }
+
+.status-indicators {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 15px;
+    flex-grow: 1;
 }
 
-video {
-  width: 100%;
-  max-width: 400px;
-  display: block;
+.connection-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ccc; /* Default: connecting */
+    transition: background-color 0.3s ease;
+}
+.connection-status-dot.connected { background-color: var(--success-color); }
+.connection-status-dot.failed { background-color: #f44336; }
+
+.match-status {
+    font-size: 1.2rem;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.3s ease;
+}
+.match-status.visible { opacity: 1; transform: scale(1); }
+
+.connection-info {
+    display: flex;
+    gap: 10px;
+    font-size: 0.9em;
+    color: #555;
+}
+.connection-info span {
+    background: #eee;
+    padding: 3px 8px;
+    border-radius: 10px;
 }
 
-#chat-container {
-  margin-top: 20px;
+.user-card .details {
+    display: none;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
 }
 
-#chat-messages {
-  height: 200px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 10px;
-  overflow-y: scroll;
-  margin-bottom: 10px;
+.user-card .details.visible { display: block; }
+.user-card .details h4 { margin: 10px 0 5px; color: var(--primary-color); }
+.user-card .details p { margin: 0 0 10px; }
+
+.card-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
 }
 
-.message {
-  margin-bottom: 5px;
+.toggle-details-btn {
+    background: #f0f0f0;
+    color: #333;
 }
 
-.message.self {
-  text-align: right;
-  color: #007bff;
+.like-btn {
+    background: #eee;
+    color: var(--text-color);
+    transition: all 0.3s ease;
 }
 
-.message .sender {
-  font-weight: bold;
+.like-btn.liked-by-me {
+    background: var(--heart-color);
+    color: white;
+    transform: scale(1.05);
 }
 
-#chat-input-container {
-  display: flex;
-  gap: 10px;
+.status-placeholder { text-align: center; color: #888; padding: 20px; }
+
+/* --- Notifications --- */
+.match-notification {
+    position: fixed;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 15px 30px;
+    border-radius: 0 0 12px 12px;
+    box-shadow: var(--shadow);
+    font-size: 1.2rem;
+    font-weight: bold;
+    z-index: 1000;
+    transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-#chat-input {
-  flex-grow: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.match-notification.show {
+    top: 0;
 }
-
-#send-chat-btn {
-  padding: 8px 15px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-#send-chat-btn:hover {
-  background-color: #218838;
-}
-

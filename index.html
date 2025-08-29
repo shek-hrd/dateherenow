@@ -1,57 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DateHereNow - Video Chat</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Dating</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>DateHereNow</h1>
-
-  <div id="login-container">
-    <h2>Login</h2>
-    <input type="text" id="userId" placeholder="Enter your name">
-    <button id="loginBtn">Login</button>
-  </div>
-
-  <div id="main-container" style="display: none;">
-    <div class="left-panel">
-      <div id="user-list-container">
-        <h2>Online Users</h2>
-        <ul id="userList"></ul>
-      </div>
-      <div id="comms-log-container">
-        <h2>Communication Log</h2>
-        <pre id="comms-log"></pre>
-      </div>
+    <!-- Notification area for matches -->
+    <div id="match-notification" class="match-notification">
+        <p>It's a match!</p>
     </div>
 
-    <div class="right-panel">
-      <div id="video-chat-container" style="display: none;">
-        <h2 id="chatting-with"></h2>
-        <div id="video-container">
-          <div class="video-wrapper">
-            <h3>You</h3>
-            <video id="localVideo" autoplay playsinline muted></video>
-          </div>
-          <div class="video-wrapper">
-            <h3>Them</h3>
-            <video id="remoteVideo" autoplay playsinline></video>
-          </div>
-        </div>
-        <div id="chat-container">
-          <div id="chat-messages"></div>
-          <div id="chat-input-container">
-            <input type="text" id="chat-input" placeholder="Type a message...">
-            <button id="send-chat-btn">Send</button>
-          </div>
-        </div>
-      </div>
+    <div class="container">
+        <header>
+            <h1>Network Dating</h1>
+            <p>Discover and connect with people on your network.</p>
+            <!-- A status light to show connection to the signaling server -->
+            <div id="server-status" class="server-status-light" title="Signaling Server Status"></div>
+        </header>
+
+        <section id="my-profile" class="card my-profile">
+            <h2>My Profile</h2>
+            <div class="profile-grid">
+                <div class="profile-picture">
+                    <img id="my-picture-preview" src="https://placehold.co/100" alt="My Picture">
+                    <input type="file" id="my-picture-input" accept="image/*" style="display: none;" aria-label="Select profile picture">
+                    <button onclick="document.getElementById('my-picture-input').click()">Set Picture</button>
+                </div>
+                <div class="profile-fields">
+                    <input type="text" id="my-name" placeholder="Your Name">
+                    <input type="text" id="my-preferences" placeholder="Preferences (e.g., coffee, hiking)">
+                    <textarea id="my-about" placeholder="About me..."></textarea>
+                    <input type="text" id="my-phone" placeholder="Phone Number (optional)">
+                </div>
+            </div>
+            <div class="profile-actions">
+                <button id="update-profile-btn">Update & Share Profile</button>
+                <div id="location-status"></div>
+            </div>
+        </section>
+
+        <section id="nearby-users">
+            <h2>Nearby Users</h2>
+            <div id="user-list">
+                <!-- User cards will be dynamically inserted here -->
+                <div class="status-placeholder">Searching for users...</div>
+            </div>
+        </section>
+
     </div>
-  </div>
-  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-  <script src="script.js"></script>
+
+    <!-- User Card Template -->
+    <template id="user-card-template">
+        <div class="card user-card">
+            <div class="card-header">
+                <img class="profile-picture-thumb" src="https://placehold.co/50" alt="User Picture">
+                <h3 class="user-name"></h3>
+                <div class="status-indicators">
+                    <div class="connection-status-dot" title="P2P Connection Status"></div>
+                    <div class="match-status" title="Match Status"></div>
+                </div>
+                <div class="connection-info">
+                    <span class="distance">-- km</span>
+                    <span class="latency">-- ms</span>
+                </div>
+            </div>
+            <div class="details">
+                <h4>Preferences</h4>
+                <p class="user-preferences"></p>
+                <h4>About</h4>
+                <p class="user-about"></p>
+                <h4>Contact</h4>
+                <p class="user-phone"></p>
+                <h4>Network</h4>
+                <p class="user-connection-type"></p>
+            </div>
+            <div class="card-actions">
+                <button class="like-btn" aria-label="Like user">❤️ Like</button>
+                <button class="toggle-details-btn">Show More</button>
+            </div>
+        </div>
+    </template>
+
+    <footer>
+        <p>Network Dating Game - A WebRTC Demo</p>
+    </footer>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="app.js"></script>
+
 </body>
-</html>
 
+</html>
