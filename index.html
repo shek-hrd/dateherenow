@@ -1,77 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Dating</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+--- a/c:/Users/frhrd/Documents/shek-hrd/dateherenow/app.js
++++ b/c:/Users/frhrd/Documents/shek-hrd/dateherenow/app.js
+@@ -1,18 +1,19 @@
+ document.addEventListener('DOMContentLoaded', () => {
+-    const SIGNALING_SERVER_URL = 'http://localhost:3000';
++    // FIX: Use the deployed Render.com server URL, not localhost.
++    const SIGNALING_SERVER_URL = 'https://network-dating-signaler.onrender.com';
+ 
+-    // --- DOM Elements ---
+-    const myNameInput = document.getElementById('my-name');
+-    const myPreferencesInput = document.getElementById('my-preferences');
+-    const myAboutInput = document.getElementById('my-about');
+-    const myPhoneInput = document.getElementById('my-phone');
+-    const myPictureInput = document.getElementById('my-picture-input');
+-    const myPicturePreview = document.getElementById('my-picture-preview');
++    // FIX: Group form elements into an object to resolve the ReferenceError.
++    const myProfileForm = {
++        name: document.getElementById('my-name'),
++        preferences: document.getElementById('my-preferences'),
++        about: document.getElementById('my-about'),
++        phone: document.getElementById('my-phone'),
++        pictureInput: document.getElementById('my-picture-input'),
++        picturePreview: document.getElementById('my-picture-preview'),
++    };
+     const updateProfileBtn = document.getElementById('update-profile-btn');
+     const userList = document.getElementById('user-list');
+     const locationStatus = document.getElementById('location-status');
+     const userCardTemplate = document.getElementById('user-card-template');
+ 
+     // --- State ---
+@@ -21,7 +22,7 @@
+         preferences: '',
+         about: '',
+         phone: '',
+-        picture: myPicturePreview.src,
++        picture: myProfileForm.picturePreview.src,
+         location: null,
+     };
+     let myId = null;
+@@ -165,7 +166,7 @@
+ 
+     updateProfileBtn.addEventListener('click', broadcastProfile);
+ 
+-    myProfileForm.pictureInput.addEventListener('change', (event) => {
++    myProfileForm.pictureInput.addEventListener('change', (event) => {
+         const file = event.target.files[0];
+         if (file) {
+             const reader = new FileReader();
 
-    <div class="container">
-        <header>
-            <h1>Network Dating</h1>
-            <p>Find people nearby</p>
-        </header>
-
-        <section id="my-profile" class="card my-profile">
-            <h2>My Profile</h2>
-            <div class="profile-grid">
-                <div class="profile-picture">
-                    <img id="my-picture-preview" src="https://placehold.co/100" alt="My Picture">
-                    <input type="file" id="my-picture-input" accept="image/*" style="display: none;">
-                    <button onclick="document.getElementById('my-picture-input').click()">Set Picture</button>
-                </div>
-                <div class="profile-fields">
-                    <input type="text" id="my-name" placeholder="Your Name">
-                    <input type="text" id="my-preferences" placeholder="Preferences (e.g., coffee, hiking)">
-                    <textarea id="my-about" placeholder="About me..."></textarea>
-                    <input type="text" id="my-phone" placeholder="Phone Number (optional)">
-                </div>
-            </div>
-            <div class="profile-actions">
-                <button id="update-profile-btn">Update & Share Profile</button>
-                <div id="location-status"></div>
-            </div>
-        </section>
-
-        <section id="nearby-users">
-            <h2>Nearby Users</h2>
-            <div id="user-list">
-                <!-- User cards will be dynamically inserted here -->
-                <div class="status-placeholder">Searching for users...</div>
-            </div>
-        </section>
-
-    </div>
-
-    <!-- User Card Template -->
-    <template id="user-card-template">
-        <div class="card user-card">
-            <div class="card-header">
-                <img class="profile-picture-thumb" src="https://placehold.co/50" alt="User Picture">
-                <h3 class="user-name"></h3>
-                <div class="connection-info">
-                    <span class="distance">-- km</span>
-                    <span class="latency">-- ms</span>
-                </div>
-            </div>
-            <div class="details">
-                <h4>Preferences</h4>
-                <p class="user-preferences"></p>
-                <h4>About</h4>
-                <p class="user-about"></p>
-                <h4>Contact</h4>
-                <p class="user-phone"></p>
-                <h4>Network</h4>
-                <p class="user-connection-type"></p>
-            </div>
-            <button class="toggle-details-btn">Show More</button>
-        </div>
-    </template>
-
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="app.js"></script>
-
-</body>
-</html>
