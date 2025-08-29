@@ -11,7 +11,7 @@
  */
 document.addEventListener('DOMContentLoaded', () => {
     // IMPORTANT: Replace this with the URL of your deployed signaling server from Render.com
-    const SIGNALING_SERVER_URL = 'https://your-signaling-server-name.onrender.com';
+    const SIGNALING_SERVER_URL = 'https://network-dating-signaler.onrender.com';
 
     // --- DOM Elements ---
     const myProfileForm = {
