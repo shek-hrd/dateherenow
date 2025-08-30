@@ -1,0 +1,12 @@
+{
+  "name": "network-dating-signaler",
+  "version": "1.0.0",
+  "description": "Signaling server for WebRTC Network Dating app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "socket.io": "^4.5.4"
+  }
+}
